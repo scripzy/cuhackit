@@ -1,20 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
   TextInput, 
   TouchableOpacity, 
   Alert, 
-  StyleSheet 
+  StyleSheet, 
+  ActivityIndicator 
 } from 'react-native';
+import * as Location from 'expo-location';
 
 const FindHelpScreen: React.FC = () => {
   // Define state variables with explicit TypeScript types
   const [name, setName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [location, setLocation] = useState<string>('');
+  const [location, setLocation] = useState<string | null>(null);
   const [helpType, setHelpType] = useState<string>('');
+  const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Request location permission & fetch user's location
+  useEffect(() => {
+    const fetchLocation = async () => {
+      setLoadingLocation(true);
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          location: 'Location permission denied',
+        }));
+        setLoadingLocation(false);
+        return;
+      }
+
+      let userLocation = await Location.getCurrentPositionAsync({});
+      setLocation(`${userLocation.coords.latitude}, ${userLocation.coords.longitude}`);
+      setLoadingLocation(false);
+    };
+
+    fetchLocation();
+  }, []);
 
   // Validation Function
   const validateForm = (): boolean => {
@@ -26,7 +51,7 @@ const FindHelpScreen: React.FC = () => {
     if (!/^\d{10}$/.test(phone)) {
       newErrors.phone = 'Phone number must be exactly 10 digits';
     }
-    if (!location.trim()) {
+    if (!location) {
       newErrors.location = 'Location is required';
     }
     if (!helpType.trim()) {
@@ -71,14 +96,17 @@ const FindHelpScreen: React.FC = () => {
       />
       {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
-      {/* Location Input */}
+      {/* Location Display */}
       <Text style={styles.label}>📍 Location:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your location"
-        value={location}
-        onChangeText={setLocation}
-      />
+      <View style={styles.locationBox}>
+        {loadingLocation ? (
+          <ActivityIndicator size="small" color="#ffffff" />
+        ) : (
+          <Text style={styles.locationText}>
+            {location ? location : 'Fetching location...'}
+          </Text>
+        )}
+      </View>
       {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
 
       {/* Type of Help Input */}
@@ -131,21 +159,33 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 16,
   },
+  locationBox: {
+    backgroundColor: '#374151', // Gray background for location display
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  locationText: {
+    color: 'white',
+    fontSize: 16,
+  },
   submitButton: {
     backgroundColor: '#dc2626', // Red for emergency requests
-    padding: 14,
+    padding: 18,
     borderRadius: 8,
     marginBottom: 10,
   },
   cancelButton: {
     backgroundColor: '#6b7280', // Gray
-    padding: 14,
+    padding: 18,
     borderRadius: 8,
   },
   buttonText: {
     color: 'white',
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   errorText: {
