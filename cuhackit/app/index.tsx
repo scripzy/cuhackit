@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
 import { MotiView } from 'moti';
 
@@ -34,6 +34,16 @@ const HomeScreen: React.FC = () => {
           </MotiView>
         ))}
       </View>
+
+      {/* Footer with Emergency Contacts & Logos */}
+      <View style={styles.footer}>
+        <Image source={require('../assets/images/duke.png')} style={styles.logo} />
+        <View style={styles.footerTextContainer}>
+          <Text style={styles.footerTitle}>Emergency Assistance</Text>
+          <Text style={styles.footerSubtitle}>Need urgent help? Call 📞 911</Text>
+        </View>
+        <Image source={require('../assets/images/clemson.png')} style={styles.logo} />
+      </View>
     </View>
   );
 };
@@ -46,6 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60, // Adjusted to push everything up
+    justifyContent: 'space-between',
   },
   header: {
     color: 'white',
@@ -81,6 +92,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 34, // Bigger text inside buttons
     fontWeight: 'bold',
+  },
+  // 📌 New Footer Styles
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 20, // Bigger footer
+    backgroundColor: '#2d3748',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 30, // More space
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 10, // Stronger effect
+  },
+  footerTextContainer: {
+    alignItems: 'center',
+    flex: 1, // Centers text properly
+  },
+  footerTitle: {
+    color: 'white',
+    fontSize: 22, // Bigger, bold
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  footerSubtitle: {
+    color: '#d1d5db',
+    fontSize: 18, // More readable
+    textAlign: 'center',
+  },
+  logo: {
+    width: 60, // Bigger logos
+    height: 60,
+    resizeMode: 'contain',
   },
 });
 
