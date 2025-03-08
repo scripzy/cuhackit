@@ -1,34 +1,49 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
-import { MotiView } from 'moti';
+import { MotiView, MotiText } from 'moti';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen: React.FC = () => {
   return (
-    <View style={styles.container}>
-      {/* Title at the Absolute Top */}
-      <Text style={styles.header}>⛈️ GoHelpMe</Text>
+    <LinearGradient colors={['#1a202c', '#2d3748']} style={styles.container}>
+      {/* Animated Title */}
+      <MotiText 
+        from={{ opacity: 0, translateY: -20 }} 
+        animate={{ opacity: 1, translateY: 0 }} 
+        transition={{ duration: 800 }}
+        style={styles.header}
+      >
+        ⛈️ GoHelpMe
+      </MotiText>
 
-      {/* Extra Large Buttons Positioned Towards the Top */}
+      {/* Buttons Positioned Towards the Top */}
       <View style={styles.buttonWrapper}>
         {[
-          { label: "🔴 Find Help", color: "#dc2626", href: "/screens/FindHelpScreen" },
-          { label: "🟢 Volunteer", color: "#16a34a", href: "/screens/VolunteerScreen" },
-          { label: "🗺️ View Map", color: "#2563eb", href: "/screens/ViewMapScreen" },
+          { label: "❗ Find Help", color: ["#e63946", "#dc2626"], href: "/screens/FindHelpScreen" },
+          { label: "🤝 Volunteer", color: ["#16a34a", "#0f9d58"], href: "/screens/VolunteerScreen" },
+          { label: "🗺️ View Map", color: ["#2563eb", "#1d4ed8"], href: "/screens/ViewMapScreen" },
         ].map((button, index) => (
           <MotiView
             key={index}
-            from={{ scale: 0.9, opacity: 0.9 }}
+            from={{ scale: 0.95, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", damping: 8, stiffness: 100 }}
+            transition={{ type: "spring", damping: 10, stiffness: 120 }}
             style={styles.buttonContainer}
           >
             <Link href={button.href} asChild>
               <TouchableOpacity 
-                style={[styles.button, { backgroundColor: button.color }]}
-                activeOpacity={0.8} // Makes button press more interactive
+                activeOpacity={0.85} 
+                style={styles.touchable}
               >
-                <Text style={styles.buttonText}>{button.label}</Text>
+                <LinearGradient
+                  colors={button.color}
+                  start={[0, 1]}
+                  end={[1, 0]}
+                  style={styles.button}
+                >
+                  <Text style={styles.buttonText}>{button.label}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </Link>
           </MotiView>
@@ -44,90 +59,94 @@ const HomeScreen: React.FC = () => {
         </View>
         <Image source={require('../assets/images/clemson.png')} style={styles.logo} />
       </View>
-    </View>
+    </LinearGradient>
   );
 };
 
-// ✅ Improved Styling for Maximum Visibility & 3D Effect
+// ✅ Enhanced Styling
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a202c', // Dark Gray Background
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60, // Adjusted to push everything up
+    paddingTop: 60, 
     justifyContent: 'space-between',
   },
   header: {
     color: 'white',
-    fontSize: 55, // Bigger Title
+    fontSize: 50, // Slightly smaller title for balance
     fontWeight: 'bold',
     textAlign: 'center',
     position: 'absolute',
-    top: 20, // Pushes it to the very top
+    top: 40, 
     left: 0,
     right: 0,
   },
   buttonWrapper: {
-    marginTop: 80, // Moves buttons closer to the top
+    marginTop: 110, // Adjusted for new button size
     width: '100%',
     alignItems: 'center',
   },
   buttonContainer: {
-    width: '90%', // Slightly smaller for better spacing
-    marginBottom: 30, // More space between buttons
+    width: '88%', // Smaller width for a cleaner look
+    marginBottom: 18, // Adjusted spacing
+  },
+  touchable: {
+    width: '100%',
+    borderRadius: 12,
   },
   button: {
-    paddingVertical: 40, // Extra Large Buttons
-    borderRadius: 12, // Rounded buttons
+    paddingVertical: 35, // Smaller button height
+    borderRadius: 12, 
     alignItems: 'center',
-    shadowColor: "#000", // 3D Button Effect
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
     shadowRadius: 6,
-    elevation: 8, // For Android shadow effect
+    elevation: 8,
   },
   buttonText: {
     color: 'white',
     textAlign: 'center',
-    fontSize: 34, // Bigger text inside buttons
+    fontSize: 28, // Slightly smaller text
     fontWeight: 'bold',
   },
-  // 📌 New Footer Styles
+  // 📌 Styled Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingVertical: 20, // Bigger footer
+    paddingVertical: 22, // Reduced footer height slightly
     backgroundColor: '#2d3748',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 30, // More space
+    paddingHorizontal: 30, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 10, // Stronger effect
+    elevation: 10, 
   },
   footerTextContainer: {
     alignItems: 'center',
-    flex: 1, // Centers text properly
+    flex: 1, 
   },
   footerTitle: {
     color: 'white',
-    fontSize: 22, // Bigger, bold
+    fontSize: 22, 
     fontWeight: 'bold',
     textAlign: 'center',
   },
   footerSubtitle: {
     color: '#d1d5db',
-    fontSize: 18, // More readable
+    fontSize: 16, 
     textAlign: 'center',
   },
   logo: {
-    width: 60, // Bigger logos
-    height: 60,
+    width: 55, // Slightly smaller logos
+    height: 55,
     resizeMode: 'contain',
   },
 });
