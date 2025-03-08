@@ -58,13 +58,30 @@ const VolunteerScreen: React.FC = () => {
     return Object.keys(newErrors).length === 0; // Returns true if no errors
   };
 
-  // Handle Form Submission
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      console.log('Volunteer Info Submitted:', { name, phone, location });
-      Alert.alert("Success", "Your volunteer info has been submitted!");
+      try {
+        const response = await fetch('https://cuh-gilt.vercel.app/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, phone, type: "volunteer", location }),
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          Alert.alert("Success", data.message);
+        } else {
+          Alert.alert("Error", data.error || "Failed to submit data.");
+        }
+      } catch (error) {
+        console.error("Error submitting volunteer info:", error);
+        Alert.alert("Error", "Something went wrong.");
+      }
     }
   };
+  
 
   return (
     <View style={styles.container}>

@@ -9,17 +9,27 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
+
+// ✅ Configure Notifications Behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const FindHelpScreen: React.FC = () => {
-  // Define state variables with explicit TypeScript types
-  const [name, setName] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
+  // Define state variables
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [type_of_help, settype_of_help] = useState('');
   const [location, setLocation] = useState<string | null>(null);
-  const [helpType, setHelpType] = useState<string>('');
-  const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Request location permission & fetch user's location
+  // Fetch user's location on mount
   useEffect(() => {
     const fetchLocation = async () => {
       setLoadingLocation(true);
@@ -41,9 +51,9 @@ const FindHelpScreen: React.FC = () => {
     fetchLocation();
   }, []);
 
-  // Validation Function
+  // ✅ Validation Function
   const validateForm = (): boolean => {
-    let newErrors: { [key: string]: string } = {}; // Ensures object has correct type
+    let newErrors: { [key: string]: string } = {};
 
     if (!/^[a-zA-Z\s]+$/.test(name.trim())) {
       newErrors.name = 'Name must contain only letters';
@@ -54,20 +64,48 @@ const FindHelpScreen: React.FC = () => {
     if (!location) {
       newErrors.location = 'Location is required';
     }
-    if (!helpType.trim()) {
-      newErrors.helpType = 'Please describe the type of help needed';
+    if (!type_of_help.trim()) {
+      newErrors.type_of_help = 'Please describe the type of help needed';
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Returns true if no errors
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Handle Form Submission
-  const handleSubmit = () => {
+  // ✅ Submit Help Request to Backend
+  const handleSubmit = async () => {
     if (validateForm()) {
-      console.log('Help Request Submitted:', { name, phone, location, helpType });
-      Alert.alert("Success", "Your help request has been submitted!");
+      try {
+        const response = await fetch('https://cuh-gilt.vercel.app/api/help-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, location, type_of_help }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          Alert.alert("Success", data.message);
+          sendNotification();
+        } else {
+          Alert.alert("Error", data.error || "Failed to submit request.");
+        }
+      } catch (error) {
+        console.error("Error submitting help request:", error);
+        Alert.alert("Error", "Something went wrong.");
+      }
     }
+  };
+
+  // ✅ Function to Notify Nearby Volunteers
+  const sendNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "🚨 Urgent Help Needed!",
+        body: `${name} needs assistance nearby.`,
+        data: { name, phone, location, type_of_help },
+      },
+      trigger: null, // Sends immediately
+    });
   };
 
   return (
@@ -114,10 +152,10 @@ const FindHelpScreen: React.FC = () => {
       <TextInput
         style={styles.input}
         placeholder="Describe the type of help you need"
-        value={helpType}
-        onChangeText={setHelpType}
+        value={type_of_help}
+        onChangeText={settype_of_help}
       />
-      {errors.helpType && <Text style={styles.errorText}>{errors.helpType}</Text>}
+      {errors.type_of_help && <Text style={styles.errorText}>{errors.type_of_help}</Text>}
 
       {/* Submit Button */}
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
@@ -136,12 +174,12 @@ const FindHelpScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a202c', // Equivalent to bg-gray-900
+    backgroundColor: '#1a202c',
     padding: 20,
   },
   header: {
     color: 'white',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
@@ -160,7 +198,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   locationBox: {
-    backgroundColor: '#374151', // Gray background for location display
+    backgroundColor: '#374151',
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
@@ -172,13 +210,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   submitButton: {
-    backgroundColor: '#dc2626', // Red for emergency requests
+    backgroundColor: '#dc2626',
     padding: 18,
     borderRadius: 8,
     marginBottom: 10,
   },
   cancelButton: {
-    backgroundColor: '#6b7280', // Gray
+    backgroundColor: '#6b7280',
     padding: 18,
     borderRadius: 8,
   },
@@ -189,7 +227,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   errorText: {
-    color: '#f87171', // Red error text
+    color: '#f87171',
     marginBottom: 10,
     fontSize: 14,
   },

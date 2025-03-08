@@ -3,7 +3,7 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ActivityIndicator
+  ActivityIndicator 
 } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -13,42 +13,93 @@ const ViewMapScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [volunteerRegions, setVolunteerRegions] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const [helpRegions, setHelpRegions] = useState<Array<{ latitude: number; longitude: number }>>([]);
-  const radius = 50 * 1609.34; // Default radius of 50 miles converted to meters
+  const radius = 50 * 1609.34; // 50 miles converted to meters
 
-  // Request location permission & get user's location
+  // ✅ Fetch User Location
   useEffect(() => {
     const fetchLocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.log('Location permission denied');
-        setLoading(false);
-        return;
-      }
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Location permission denied');
+          setLoading(false);
+          return;
+        }
 
-      let userLocation = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: userLocation.coords.latitude,
-        longitude: userLocation.coords.longitude,
-      });
-      setLoading(false);
+        let userLocation = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: userLocation.coords.latitude,
+          longitude: userLocation.coords.longitude,
+        });
+      } catch (error) {
+        console.error("Error fetching user location:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchLocation();
   }, []);
 
-  // Simulated data for volunteers and victims
+  // ✅ Fetch Help Requests from Backend
   useEffect(() => {
-    if (location) {
-      setVolunteerRegions([{ latitude: location.latitude, longitude: location.longitude }]);
-      setHelpRegions([{ latitude: location.latitude + 0.2, longitude: location.longitude - 0.2 }]);
-    }
-  }, [location]);
+    const fetchHelpRequests = async () => {
+      try {
+        const response = await fetch('https://cuh-gilt.vercel.app/api/help-requests');
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Fetched Help Requests:", data); // ✅ Debugging Log
+
+        setHelpRegions(data.map((h: any) => ({
+          latitude: parseFloat(h.location.split(', ')[0]),
+          longitude: parseFloat(h.location.split(', ')[1]),
+        })));
+      } catch (error) {
+        console.error("Error fetching help requests:", error);
+      }
+    };
+
+    fetchHelpRequests();
+    const interval = setInterval(fetchHelpRequests, 10000); // Refresh every 10 sec
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ Fetch Volunteers from Backend
+  useEffect(() => {
+    const fetchVolunteers = async () => {
+      try {
+        const response = await fetch('https://cuh-gilt.vercel.app/api/users');
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Fetched Volunteers:", data); // ✅ Debugging Log
+
+        setVolunteerRegions(data.map((v: any) => ({
+          latitude: parseFloat(v.location.split(', ')[0]),
+          longitude: parseFloat(v.location.split(', ')[1]),
+        })));
+      } catch (error) {
+        console.error("Error fetching volunteers:", error);
+      }
+    };
+
+    fetchVolunteers();
+    const interval = setInterval(fetchVolunteers, 10000); // Refresh every 10 sec
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>🗺️ View Map</Text>
 
-      {/* Map Key (Moved Above the Map) */}
+      {/* 📌 Map Key */}
       <View style={styles.legendContainer}>
         <Text style={styles.legendHeader}>📌 Map Key:</Text>
         <View style={styles.legendItem}>
@@ -56,12 +107,16 @@ const ViewMapScreen: React.FC = () => {
           <Text style={styles.legendText}>Victims of Natural Disasters</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: "rgba(0, 255, 0, 0.8)" }]} />
+          <View style={[styles.legendColor, { backgroundColor: "rgba(0, 0, 255, 0.8)" }]} />
           <Text style={styles.legendText}>Available Volunteers</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: "rgba(128, 0, 128, 0.8)" }]} />
+          <Text style={styles.legendText}>Active Volunteers Near Victims</Text>
         </View>
       </View>
 
-      {/* Map & Loading Indicator */}
+      {/* 🗺️ Map & Loading Indicator */}
       {loading || !location ? (
         <ActivityIndicator size="large" color="#ffffff" />
       ) : (
@@ -74,37 +129,61 @@ const ViewMapScreen: React.FC = () => {
             longitudeDelta: 0.5,
           }}
         >
-          {/* User Location Marker */}
+          {/* 📍 User Location Marker */}
           <Marker coordinate={location} title="You are here" />
 
-          {/* Volunteer Highlight (Green) */}
+          {/* 🔵 Volunteer Highlights */}
           {volunteerRegions.map((region, index) => (
             <Circle
               key={`volunteer-${index}`}
               center={region}
               radius={radius}
-              strokeColor="rgba(0, 255, 0, 0.8)"
-              fillColor="rgba(0, 255, 0, 0.3)"
+              strokeColor="rgba(0, 0, 255, 0.8)" // Blue border
+              fillColor="rgba(0, 0, 255, 0.1)"   // Transparent blue fill
             />
           ))}
 
-          {/* Help Request Highlight (Red) */}
+          {/* 🔴 Help Request Highlights */}
           {helpRegions.map((region, index) => (
             <Circle
               key={`help-${index}`}
               center={region}
               radius={radius}
-              strokeColor="rgba(255, 0, 0, 0.8)"
-              fillColor="rgba(255, 0, 0, 0.3)"
+              strokeColor="rgba(255, 0, 0, 0.8)" // Red border
+              fillColor="rgba(255, 0, 0, 0.1)"   // Transparent red fill
             />
           ))}
+
+          {/* 🟣 Overlapping Regions (Active Volunteers Near Victims) */}
+          {helpRegions.map((helpRegion, hIndex) =>
+            volunteerRegions.map((volunteerRegion, vIndex) => {
+              const distance = Math.sqrt(
+                Math.pow(helpRegion.latitude - volunteerRegion.latitude, 2) +
+                Math.pow(helpRegion.longitude - volunteerRegion.longitude, 2)
+              );
+
+              // Render the purple highlight if the volunteer is within the help request radius
+              if (distance < radius / 111139) { // Convert meters to degrees
+                return (
+                  <Circle
+                    key={`overlap-${hIndex}-${vIndex}`}
+                    center={helpRegion} // Center on help request
+                    radius={radius}
+                    strokeColor="rgba(128, 0, 128, 0.8)" // Purple border
+                    fillColor="rgba(128, 0, 128, 0.1)"   // Transparent purple fill
+                  />
+                );
+              }
+              return null;
+            })
+          )}
         </MapView>
       )}
     </View>
   );
 };
 
-// ✅ Define Styles
+// ✅ Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -123,7 +202,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginHorizontal: 20,
-    marginBottom: 10, // Keeps it above the map
+    marginBottom: 10,
     alignItems: 'center',
   },
   legendHeader: {
